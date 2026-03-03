@@ -57,7 +57,9 @@ Structure:
     <img src="IMG_PLACEHOLDER_1" style="width: 100%; border-radius: 0;" />
   </section>
   <!-- Body paragraphs: justified ON THE P TAG, with side margins -->
-  <p style="line-height: 2em; margin-bottom: 24px; margin-left: 8px; margin-right: 8px; text-align: justify;">
+  <!-- ⚠️ CRITICAL: font-size and letter-spacing MUST be on <p>, NOT only on <span> -->
+  <!-- 公众号 ProseMirror editor strips font-size/letter-spacing from <span> on paste -->
+  <p style="line-height: 2em; font-size: 15px; letter-spacing: 1px; margin-bottom: 24px; margin-left: 8px; margin-right: 8px; text-align: justify;">
     <span style="color: rgb(30,30,30); font-family: 'PingFang SC',system-ui,-apple-system,'Helvetica Neue','Hiragino Sans GB','Microsoft YaHei UI','Microsoft YaHei',Arial,sans-serif; font-size: 15px; letter-spacing: 1px;">
       Text content here
     </span>
@@ -210,6 +212,12 @@ for (var i = 0; i < dialogs.length; i++) {
 **⚠️ The dialog may appear but NOT be detected by checking `.wechat_send_dialog` class alone** — use a broader `[class*=dialog]` search and look for "发送预览" text content as a backup detection method.
 
 ## Gotchas & Lessons Learned
+
+### Font Size & Letter Spacing (Critical!)
+- **`font-size: 15px` and `letter-spacing: 1px` MUST be on `<p>` tag, NOT only on `<span>`** — 公众号 ProseMirror editor strips these properties from `<span>` on paste.
+- `<p>` level inline styles survive paste; `<span>` level font-size/letter-spacing get replaced with `medium`/`normal`.
+- Always put these on BOTH `<p>` and `<span>` for safety (span as fallback).
+- Default typography: **font-size 15px, line-height 2em, letter-spacing 1px**.
 
 ### Text Alignment (Critical!)
 - **`text-align: justify` MUST be on `<p>` (block element), NOT on `<span>` (inline element)** — it's completely ignored on inline elements.
