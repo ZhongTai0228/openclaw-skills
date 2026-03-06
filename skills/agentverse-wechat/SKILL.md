@@ -1,12 +1,12 @@
 ---
 name: agentverse-wechat
 description: >
-  Convert Feishu wiki documents into formatted WeChat 公众号 articles (观猹笔记 style).
-  Full pipeline: fetch doc → generate styled HTML → extract images as base64 → paste into 公众号 editor → set cover/summary → preview.
+  将飞书文档或网页文章排版为特工宇宙（Agent Universe）公众号风格文章。
+  完整流程：获取文档 → 生成带样式 HTML → 提取图片为 base64 → 粘贴到公众号编辑器 → 设封面/摘要 → 预览。
   Use when: (1) user shares a Feishu doc link or token and wants it published on 公众号,
   (2) user says "排版到公众号" or "发公众号",
   (3) user wants to format an article for WeChat MP editor,
-  (4) user mentions "Agent Universe" article or 观猹笔记 formatting.
+  (4) user mentions "特工宇宙" or "Agent Universe" article formatting.
   Requires: openclaw browser profile with Chrome DevTools, Feishu API access, 公众号 editor access.
 ---
 

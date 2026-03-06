@@ -1,14 +1,12 @@
+---
+name: ai-topic-scout
+description: >
+  AI 领域选题雷达，为特工宇宙（Agent Universe）公众号自动扫描信息源、提炼选题建议。
+  触发：扫描选题、找选题、topic scout、选题雷达、有什么 AI 新闻值得写、今天有什么热点；
+  Heartbeat 9/12/15/18/21 点；创建选题表/初始化选题表。
+---
+
 # AI Topic Scout
-
-<description>
-AI 领域选题雷达，为"特工宇宙"（Agent Universe）公众号自动扫描信息源、提炼选题建议。
-
-**触发条件（任一即可）**：
-(1) 用户说"扫描选题"、"找选题"、"topic scout"、"选题雷达"
-(2) 用户说"有什么 AI 新闻值得写"、"今天有什么热点"
-(3) Heartbeat 定时触发（白天 9/12/15/18/21 点，每 3 小时）
-(4) 用户说"创建选题表"或"初始化选题表"（仅首次）
-</description>
 
 ## 概述
 
