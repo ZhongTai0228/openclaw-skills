@@ -1,74 +1,119 @@
-# AI Topic Scout - 信息源与扫描策略
+# AI Topic Scout - 信息源清单
 
-## 信息源列表
+> 最后更新：2026-03-07
+> 共计 ~50 个信息源，分 8 大类
 
-### 1. X/Twitter AI KOL
-通过 web_search 搜索近期推文：
-- @sama (Sam Altman, OpenAI CEO)
-- @kaboringAI (Karina Nguyen)
-- @ylecun (Yann LeCun, Meta AI)
-- @demaboringAI (Demis Hassabis, DeepMind)
-- @AnthropicAI
-- @ClementDelwordle (Clem Delangue, Hugging Face)
-- @jimfan (Jim Fan, NVIDIA)
-- @kaboringAI
-- @emaboringollick (Ethan Mollick)
+---
 
-搜索查询示例：
-- `site:x.com AI announcement today`
-- `from:sama OR from:ylecun AI`
+## 1. 科技媒体（RSS + Brave Search）
 
-### 2. 官方博客
-| 来源 | URL | 扫描策略 |
+| 来源 | 方式 | 优先级 |
 |---|---|---|
-| OpenAI Blog | openai.com/blog | `site:openai.com/blog` |
-| Anthropic Blog | anthropic.com/research | `site:anthropic.com` |
-| Google DeepMind | deepmind.google/discover | `site:deepmind.google` |
-| Meta AI Blog | ai.meta.com/blog | `site:ai.meta.com/blog` |
-| Mistral Blog | mistral.ai/news | `site:mistral.ai/news` |
+| TechCrunch AI | RSS `techcrunch.com/category/artificial-intelligence/feed/` | ⭐⭐⭐⭐⭐ |
+| The Verge AI | RSS Atom Feed | ⭐⭐⭐⭐⭐ |
+| Ars Technica | RSS + 关键词过滤 | ⭐⭐⭐⭐ |
+| MIT Technology Review | Brave `site:technologyreview.com AI` | ⭐⭐⭐⭐ |
+| The Information | Brave `site:theinformation.com AI` | ⭐⭐⭐⭐ |
+| Bloomberg AI | Brave `bloomberg.com AI` | ⭐⭐⭐⭐ |
+| 404 Media | Brave `site:404media.co AI` | ⭐⭐⭐ |
+| Wired AI | Brave `site:wired.com artificial intelligence` | ⭐⭐⭐ |
+| CNBC AI | Brave `site:cnbc.com AI` | ⭐⭐⭐ |
 
-### 3. 科技媒体
-| 来源 | 搜索查询 |
-|---|---|
-| TechCrunch | `site:techcrunch.com AI` |
-| The Verge | `site:theverge.com AI` |
-| Ars Technica | `site:arstechnica.com AI` |
-| Wired | `site:wired.com artificial intelligence` |
+## 2. 官方博客（Brave Search site: 搜索）
 
-### 4. 社区
-| 来源 | URL / 查询 |
-|---|---|
-| Hacker News | `site:news.ycombinator.com AI` + web_fetch `https://hn.algolia.com/api/v1/search?query=AI&tags=story&hitsPerPage=10` |
-| Reddit r/MachineLearning | `site:reddit.com/r/MachineLearning` |
+| 来源 | 搜索查询 | 优先级 |
+|---|---|---|
+| OpenAI Blog | `site:openai.com/blog` | ⭐⭐⭐⭐⭐ |
+| Anthropic | `site:anthropic.com` | ⭐⭐⭐⭐⭐ |
+| Google DeepMind | `site:deepmind.google` | ⭐⭐⭐⭐⭐ |
+| Google AI Blog | `site:blog.google/technology/ai` | ⭐⭐⭐⭐ |
+| Meta AI Blog | `site:ai.meta.com/blog` | ⭐⭐⭐⭐ |
+| Mistral | `site:mistral.ai/news` | ⭐⭐⭐⭐ |
+| Microsoft AI Blog | `site:blogs.microsoft.com AI` | ⭐⭐⭐ |
+| NVIDIA AI Blog | `site:blogs.nvidia.com AI` | ⭐⭐⭐ |
+| Apple ML Research | `site:machinelearning.apple.com` | ⭐⭐⭐ |
+| Cohere | `site:cohere.com/blog` | ⭐⭐ |
 
-### 5. 播客
-| 播客 | 搜索查询 |
-|---|---|
-| Latent Space | `site:latent.space` |
-| Lex Fridman | `site:lexfridman.com` OR `Lex Fridman podcast AI` |
-| The AI Podcast (NVIDIA) | `NVIDIA AI podcast latest episode` |
-| Cognitive Revolution | `cognitive revolution podcast AI latest` |
-| Last Week in AI | `last week in AI podcast latest` |
+## 3. X/Twitter KOL（Brave Search）
 
-## 扫描策略
+搜索模板：`site:x.com "KOL名" AI` 或 `from:handle AI`
 
-### 搜索查询组合（每轮执行）
-每轮扫描执行以下 web_search 查询（freshness="pd" 限定 24 小时内）：
+| KOL | Handle | 身份 | 优先级 |
+|---|---|---|---|
+| Sam Altman | @sama | OpenAI CEO | ⭐⭐⭐⭐⭐ |
+| Andrej Karpathy | @karpathy | 前 OpenAI/Tesla，独立研究者 | ⭐⭐⭐⭐⭐ |
+| Yann LeCun | @ylecun | Meta AI 首席科学家 | ⭐⭐⭐⭐⭐ |
+| Anthropic | @AnthropicAI | Anthropic 官方 | ⭐⭐⭐⭐⭐ |
+| Simon Willison | @simonw | AI 工具链/开源意见领袖 | ⭐⭐⭐⭐⭐ |
+| Jim Fan | @DrJimFan | NVIDIA 高级研究科学家 | ⭐⭐⭐⭐ |
+| Clem Delangue | @ClementDelangue | Hugging Face CEO | ⭐⭐⭐⭐ |
+| Ethan Mollick | @emollick | 沃顿商学院教授，AI 应用研究 | ⭐⭐⭐⭐ |
+| swyx | @swyx | Latent Space 主播，AI 工程圈核心 | ⭐⭐⭐⭐ |
+| Arav Srinivas | @AravSrinivas | Perplexity CEO | ⭐⭐⭐ |
+| Bindu Reddy | @bindureddy | Abacus.AI CEO，模型评测 | ⭐⭐⭐ |
 
-1. **综合热点**: `AI breakthrough OR AI launch OR AI release today 2026`
-2. **模型发布**: `new AI model release GPT Claude Gemini Llama`
-3. **产品动态**: `AI product launch startup funding 2026`
-4. **开源动态**: `open source AI model release huggingface`
-5. **政策法规**: `AI regulation policy government`
-6. **Agent/应用**: `AI agent autonomous tool use`
-7. **行业影响**: `AI impact industry enterprise adoption`
+## 4. 社区论坛（Curl API 直接抓取）
 
-### 去重策略
-- 用选题标题关键词在多维表格中搜索，避免重复选题
-- 相似新闻合并为一个选题，多个信息源作为参考
+| 来源 | 方式 | 优先级 |
+|---|---|---|
+| Hacker News | Algolia API `hn.algolia.com/api/v1/search_by_date` | ⭐⭐⭐⭐⭐ |
+| Reddit r/MachineLearning | JSON API `/hot.json` | ⭐⭐⭐⭐⭐ |
+| Reddit r/LocalLLaMA | JSON API `/hot.json` | ⭐⭐⭐⭐⭐ |
+| Reddit r/ChatGPT | JSON API `/hot.json` | ⭐⭐⭐⭐ |
+| Reddit r/singularity | JSON API `/hot.json` | ⭐⭐⭐ |
 
-### 选题提炼原则
-1. **不是新闻搬运**：不要"OpenAI 发布了 X"，而要"X 意味着什么？对 Y 有何影响？"
-2. **有角度**：每个选题必须有明确的切入点
-3. **有读者价值**：说明为什么特工宇宙的读者会关心
-4. **时效性判断**：区分"必须今天写"和"可以慢慢写"
+## 5. 开源/开发者平台（Curl + Brave Search）
+
+| 来源 | 方式 | 优先级 |
+|---|---|---|
+| Hugging Face Trending Models | curl `huggingface.co/api/models?sort=trending&limit=10` | ⭐⭐⭐⭐⭐ |
+| GitHub Trending | curl `github.com/trending?since=daily` + 过滤 AI 相关 | ⭐⭐⭐⭐ |
+| ArXiv cs.AI | RSS `arxiv.org/rss/cs.AI` | ⭐⭐⭐⭐ |
+| ArXiv cs.CL | RSS `arxiv.org/rss/cs.CL` | ⭐⭐⭐⭐ |
+| Papers With Code | Brave `site:paperswithcode.com trending` | ⭐⭐⭐ |
+
+## 6. 播客（RSS + Brave Search）
+
+| 播客 | 方式 | 优先级 |
+|---|---|---|
+| Latent Space | RSS `api.substack.com/feed/podcast/latent-space` | ⭐⭐⭐⭐⭐ |
+| Lex Fridman | Brave `Lex Fridman podcast AI latest` | ⭐⭐⭐⭐ |
+| Cognitive Revolution | Brave `cognitive revolution podcast AI latest` | ⭐⭐⭐ |
+| Last Week in AI | Brave `last week in AI podcast latest` | ⭐⭐⭐ |
+| NVIDIA AI Podcast | Brave `NVIDIA AI podcast latest episode` | ⭐⭐ |
+
+## 7. 综合搜索查询（Brave Search，freshness="pd"）
+
+每轮扫描执行以下查询，限定 24 小时内：
+
+| # | 查询 | 覆盖范围 |
+|---|---|---|
+| 1 | `AI breakthrough OR AI launch OR AI release today 2026` | 综合热点 |
+| 2 | `new AI model release GPT Claude Gemini Llama` | 模型发布 |
+| 3 | `AI product launch startup funding 2026` | 产品/融资 |
+| 4 | `open source AI model release huggingface` | 开源动态 |
+| 5 | `AI regulation policy government` | 政策法规 |
+| 6 | `AI agent autonomous tool use` | Agent/应用 |
+| 7 | `AI impact industry enterprise adoption` | 行业影响 |
+
+## 8. 数据/榜单（Brave Search，按需）
+
+| 来源 | 搜索查询 | 用途 |
+|---|---|---|
+| LMSYS Chatbot Arena | `site:chat.lmsys.org leaderboard` | 模型排名变动 |
+| Stanford HAI AI Index | `site:aiindex.stanford.edu` | 年度报告/权威数据 |
+
+---
+
+## 扫描优先级说明
+
+- ⭐⭐⭐⭐⭐：每轮必扫，核心信息源
+- ⭐⭐⭐⭐：每轮扫描，重要补充
+- ⭐⭐⭐：选择性扫描，避免信息过载
+- ⭐⭐：低频扫描，特定话题时启用
+
+## 不扫描的源（排除列表）
+
+- ❌ 国内媒体（量子位、36氪、机器之心等）——选题面向海外信息差
+- ❌ 付费墙严重且无法获取摘要的源
+- ❌ 质量参差不齐的自媒体/营销号
