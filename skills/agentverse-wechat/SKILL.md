@@ -2,159 +2,155 @@
 name: agentverse-wechat
 description: >
   将飞书文档或网页文章排版为特工宇宙（Agent Universe）公众号风格文章。
-  完整流程：获取文档 → 生成带样式 HTML → 提取图片为 base64 → 粘贴到公众号编辑器 → 设封面/摘要 → 预览。
+  完整流程：获取文档 → 生成带样式 HTML → 上传图片到微信 CDN → 注入编辑器 → 设封面/摘要 → 预览。
   Use when: (1) user shares a Feishu doc link or token and wants it published on 公众号,
   (2) user says "排版到公众号" or "发公众号",
   (3) user wants to format an article for WeChat MP editor,
   (4) user mentions "特工宇宙" or "Agent Universe" article formatting.
-  Requires: openclaw browser profile with Chrome DevTools, Feishu API access, 公众号 editor access.
+  Requires: openclaw browser profile, Feishu API access, 公众号 editor access.
 ---
 
-# AgentVerse WeChat Pipeline
+# AgentVerse WeChat Pipeline v2
 
-Convert Feishu wiki docs to styled 公众号 articles. Full workflow below.
+将飞书文档排版为公众号文章的完整自动化流程。
+
+> **核心教训**：不要用粘贴（Cmd+V）方式注入内容——ProseMirror 会截断内容并丢失图片。
+> **正确方式**：通过微信 API 上传图片获取 CDN URL → 用 innerHTML 注入完整 HTML。
 
 ## Style Reference
 
 Read [references/style-guide.md](references/style-guide.md) for complete CSS specs. Key rules:
 
-- **Justify** all text except H2 (centered)
-- **Chinese curved quotes** `""` only — no straight quotes, no `「」`
-- **CJK spacing**: space between Chinese and English/numbers, but NOT before/after Chinese punctuation
-- **Hero image**: full-width, no margin, no border-radius
-- **Other images**: 8px side margins, 4px border-radius
-- **Separator images**: 32px top/bottom margin, identifiable by dimensions (typically 1080×166)
-- **Footer images**: bottom branding/QR images, treat as regular content images
+| 元素 | 样式 |
+|------|------|
+| 正文 `<p>` | font-size: 15px, line-height: 2em, letter-spacing: 1px, text-align: justify, margin: 0 8px 24px 8px |
+| 标题 `<h2>` | font-size: 20px, text-align: center, margin: 32px 8px |
+| 题图 | width: 100%, margin: 0, border-radius: 0 |
+| 内容图片 | max-width: 100%, margin: 0 8px, border-radius: 4px |
+| 分隔图 | max-width: 100%, margin: 32px 8px |
+| 引用 `""` | 只用中文弯引号，不用 `「」` |
 
-## Pipeline Steps
+**⚠️ font-size 和 letter-spacing 必须放在 `<p>` 上，不能只放 `<span>`**——公众号编辑器粘贴时会剥离 span 上的这些属性。
 
-### 1. Fetch Document
+---
+
+## Pipeline Steps（共 6 步）
+
+### Step 1: 获取文档 + 下载图片
 
 ```
 feishu_fetch_doc(doc_id=<token_or_url>)
 ```
 
-Get full markdown. Note image tokens (various formats like `Keexbt8BDo...`). Count total images.
+获取 Markdown 内容，记录所有图片 token（如 `ECqTbC2gVo...`）。
 
-**Image classification**: Examine dimensions in the markdown to classify:
-- **Hero image**: first image, typically wide aspect ratio (e.g. 1702×920)
-- **Separator images**: narrow banners, typically 1080×166
-- **Content images**: screenshots/photos, typically ~1790×1200
-- **Footer images**: bottom branding, various sizes around 1080×290-343
+**下载图片**：用 `feishu_drive_fetch_media` API 逐张下载到工作目录：
 
-### 2. Generate Styled HTML
+```
+mkdir -p ~/.openclaw/workspace-dev/<article-slug>/
+feishu_drive_fetch_media(resource_token=<img_token>, type="media", output_path="<workdir>/img_<N>.png")
+```
 
-Write a Python script to generate `article.html` with inline CSS per style guide.
+> **备选方案**：如果 API 无权限，可在浏览器打开飞书文档页面，用 `fetch(url, {credentials:'include'})` 方式下载。
 
-**Critical**: Use `IMG_PLACEHOLDER_1` through `IMG_PLACEHOLDER_N` for images (sequential numbering matching image token order).
+### Step 2: 生成带样式 HTML
 
-Structure:
+写 Python 脚本生成 `article.html`，图片位置用 `IMG_PLACEHOLDER_N`。
+
+**⚠️ 占位符替换时必须倒序（16→1）**，否则 `IMG_PLACEHOLDER_1` 会匹配到 `IMG_PLACEHOLDER_10` 中的 `1`。
+
+HTML 结构：
 ```html
 <html lang="zh-CN"><head><meta charset="UTF-8"></head>
 <body style="max-width: 680px; margin: 0 auto; padding: 20px; background: #fff;">
-  <!-- Hero image: full-width, NO side margins -->
-  <section style="text-align: center; margin-bottom: 24px; margin-left: 0; margin-right: 0;">
+  <!-- 题图：全宽，无边距 -->
+  <div style="text-align: center; margin-bottom: 24px; margin-left: 0; margin-right: 0;">
     <img src="IMG_PLACEHOLDER_1" style="width: 100%; border-radius: 0;" />
-  </section>
-  <!-- Body paragraphs: justified ON THE P TAG, with side margins -->
-  <!-- ⚠️ CRITICAL: font-size and letter-spacing MUST be on <p>, NOT only on <span> -->
-  <!-- 公众号 ProseMirror editor strips font-size/letter-spacing from <span> on paste -->
+  </div>
+  <!-- 正文段落 -->
   <p style="line-height: 2em; font-size: 15px; letter-spacing: 1px; margin-bottom: 24px; margin-left: 8px; margin-right: 8px; text-align: justify;">
-    <span style="color: rgb(30,30,30); font-family: 'PingFang SC',system-ui,-apple-system,'Helvetica Neue','Hiragino Sans GB','Microsoft YaHei UI','Microsoft YaHei',Arial,sans-serif; font-size: 15px; letter-spacing: 1px;">
-      Text content here
-    </span>
+    <span style="color: rgb(30,30,30); font-size: 15px; letter-spacing: 1px;">文字内容</span>
   </p>
-  <!-- H2: centered, 32px top/bottom margin -->
-  <h2 style="text-align: center; line-height: 2em; margin-top: 32px; margin-bottom: 32px; margin-left: 8px; margin-right: 8px;">
-    <span style="color: rgb(30,30,30); font-family: ...; font-size: 20px; letter-spacing: 1px;">
-      <span style="font-weight: bold;">Title</span>
-    </span>
-  </h2>
-  <!-- Separator image: centered, 32px margin -->
-  <section style="text-align: center; margin-top: 32px; margin-bottom: 32px; margin-left: 8px; margin-right: 8px;">
-    <img src="IMG_PLACEHOLDER_N" style="max-width: 100%;" />
-  </section>
-  <!-- Content image: centered, 8px side margins -->
-  <section style="text-align: center; margin-bottom: 24px; margin-left: 8px; margin-right: 8px;">
+  <!-- 标题 -->
+  <h2 style="text-align: center; margin: 32px 8px;"><span style="font-size: 20px;"><b>标题</b></span></h2>
+  <!-- 内容图片 -->
+  <div style="text-align: center; margin-bottom: 24px; margin-left: 8px; margin-right: 8px;">
     <img src="IMG_PLACEHOLDER_N" style="max-width: 100%; border-radius: 4px;" />
-  </section>
+  </div>
 </body></html>
 ```
 
-### 3. Fix Typography
+**⚠️ 用 `<div>` 不要用 `<section>`**——`<section>` 在 innerHTML 注入时兼容性更好。
 
-Run the typography fixer on the HTML source **before** image embedding:
+### Step 3: 修复排版
 
 ```bash
 python3 <skill-dir>/scripts/fix_typography.py article.html
 ```
 
-This handles: straight quotes → Chinese curved quotes `""`, CJK/Latin spacing rules.
+处理：直引号→弯引号、中英文间距。
 
-### 4. Extract Images as Base64
+### Step 4: 上传图片到微信 CDN + 生成最终 HTML
 
-**Method: `fetch()` with credentials from the Feishu doc page** (proven reliable).
+这是**关键步骤**。不要试图用 base64 内嵌或 localhost URL——必须上传到微信 CDN。
 
-1. Open the Feishu doc URL in openclaw browser (`browser action=open`)
-2. Wait for the page to load (~5 seconds)
-3. Inject a single JS snippet that uses `fetch()` with `credentials: 'include'` to download each image by token, convert to base64 via `FileReader.readAsDataURL()`, and store as `window._img_b64_N`:
+#### 4a. 打开公众号后台
+
+```
+browser(action="open", profile="openclaw", targetUrl="https://mp.weixin.qq.com")
+```
+
+确认已登录，从 URL 中提取 `token=xxx`。
+
+#### 4b. 创建新文章
+
+点击"图文消息"或"文章"进入编辑器，获取编辑器 tab 的 `targetId`。
+
+#### 4c. 上传图片
+
+用 Node.js 通过 CDP 在编辑器页面的上下文中调用微信文件上传 API：
 
 ```javascript
-// Inject this into the Feishu doc page
-var tokens = ['token1', 'token2', ...]; // all image tokens in order
-window._imgDone = 0;
-window._imgTotal = tokens.length;
-async function extractAll() {
-  for (var i = 0; i < tokens.length; i++) {
-    try {
-      var url = 'https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/v2/cover/'
-        + tokens[i] + '/?fallback_source=1&height=2000&mount_node_token=<WIKI_TOKEN>&mount_point=wiki_image&policy=equal';
-      var resp = await fetch(url, {credentials: 'include'});
-      var blob = await resp.blob();
-      var reader = new FileReader();
-      var b64 = await new Promise(function(resolve) {
-        reader.onload = function() { resolve(reader.result); };
-        reader.readAsDataURL(blob);
-      });
-      window['_img_b64_' + (i + 1)] = b64;
-    } catch (e) {
-      window['_img_b64_' + (i + 1)] = null;
-    }
-    window._imgDone++;
-  }
-}
-extractAll();
+// 上传单张图片到微信 CDN
+const fd = new FormData();
+const blob = new Blob([imageArrayBuffer], {type: 'image/png'});
+fd.append('file', blob, 'img_1.png');
+
+const r = await fetch('/cgi-bin/filetransfer?action=upload_material&f=json&scene=1&writetype=doublewrite&groupid=1&token=<TOKEN>&lang=zh_CN', {
+  method: 'POST',
+  body: fd,
+  credentials: 'include'
+});
+const data = await r.json();
+// data.cdn_url 或 data.url 即为微信 CDN 地址
 ```
 
-4. Wait ~15 seconds for all images to download (poll `window._imgDone`)
-5. Use CDP WebSocket script (`extract_images.js`) to pull values and replace placeholders:
+**完整上传脚本** `upload_and_inject.js`（见 scripts/ 目录）：
+1. 读取所有本地图片文件
+2. 逐张上传到微信 CDN，收集 URL 映射
+3. 读取 article.html，**倒序**替换 `IMG_PLACEHOLDER_N` 为 CDN URL
+4. 通过 `innerHTML` 注入到 ProseMirror 编辑器
 
-```bash
-cd <workdir> && npm install ws  # one-time
-node <skill-dir>/scripts/extract_images.js <ws-url> article.html article_final.html <count>
-```
+#### 4d. 注入 HTML 到编辑器
 
-**⚠️ DO NOT use `crossOrigin = 'use-credentials'` with `new Image()` + canvas approach** — this fails with CORS errors on the public sharing page. The `fetch()` + `FileReader` approach works because same-origin fetch with credentials is allowed.
-
-**⚠️ The `mount_node_token` in the URL must match the wiki document token** (the part after `/wiki/` in the URL).
-
-### 5. Paste into 公众号 Editor
-
-1. Serve `article_final.html` locally: `python3 -m http.server <port>` (use any free port; check 8899/8900 etc.)
-2. Navigate a browser tab to the local URL, wait for load
-3. Select all body content and Cmd+C:
+通过 CDP 直接设置 ProseMirror 的 innerHTML：
 
 ```javascript
-var c = Array.from(document.body.children);
-var r = document.createRange();
-r.setStartBefore(c[0]); r.setEndAfter(c[c.length - 1]);
-window.getSelection().removeAllRanges(); window.getSelection().addRange(r);
-// Then press Meta+C
+var pm = document.querySelector(".ProseMirror");
+pm.innerHTML = htmlContent;  // 包含微信 CDN 图片 URL 的完整 HTML
+pm.dispatchEvent(new Event("input", {bubbles: true}));
 ```
 
-4. Open a **new** 公众号 editor tab: `https://mp.weixin.qq.com/cgi-bin/appmsg?t=media/appmsg_edit&action=edit&type=77&token=<TOKEN>&lang=zh_CN`
-5. **Set title FIRST** (before pasting) — it's a `<textarea id="title">`, must use native setter:
+> **⚠️ 绝对不要用 Cmd+V 粘贴方式**——ProseMirror 粘贴处理会：
+> - 截断内容（4300 字变 2200 字）
+> - 丢失第一个 `<section>` 元素
+> - 不稳定，每次截断位置不同
+>
+> innerHTML 注入 100% 可靠，内容完整。
 
+### Step 5: 设置标题 + 封面 + 摘要
+
+**设置标题**（在注入内容之前或之后都可以）：
 ```javascript
 var ta = document.querySelector('#title');
 var setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
@@ -163,21 +159,13 @@ ta.dispatchEvent(new Event('input', {bubbles: true}));
 ta.dispatchEvent(new Event('change', {bubbles: true}));
 ```
 
-6. Focus `.ProseMirror` editor and paste (Cmd+V)
-7. Wait **15-20 seconds** for images to upload (24 images take time)
+**设置封面**：
+1. 点击 `.js_selectCoverFromContent`
+2. 等 2 秒，点击第一个 `.appmsg_content_img_item`
+3. 点击"下一步"（`.weui-desktop-btn_primary` + `offsetHeight > 0` + 文本含"下一步"）
+4. 点击"确认"
 
-### 6. Set Cover Image
-
-1. Click `.js_selectCoverFromContent` to open image picker
-2. Click first `.appmsg_content_img_item` to select hero image
-3. Click "下一步" button (find via `.weui-desktop-btn_primary` with text "下一步" and `offsetHeight > 0`)
-4. In crop dialog, click "确认" button (find visible button with text "确认")
-5. Confirm cover is set
-
-### 7. Write Summary (摘要)
-
-Set `#js_description` textarea value using native setter (same pattern as title):
-
+**设置摘要**（≤15 字，必须有标点结尾）：
 ```javascript
 var ta = document.querySelector('#js_description');
 var setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
@@ -185,81 +173,128 @@ setter.call(ta, '摘要内容。');
 ta.dispatchEvent(new Event('input', {bubbles: true}));
 ```
 
-Rules:
-- ≤15 characters
-- Catchy/attractive
-- **Must end with punctuation** (。！？)
+### Step 6: 保存 + 预览
 
-### 8. Save & Preview
-
-1. Click `#js_submit` ("保存为草稿")
-2. Wait 5 seconds
-3. Click "预览" button (find by text content, use `offsetHeight > 0` filter)
-4. Wait 3 seconds for dialog
-5. Find the "发送预览" dialog — **it uses class `.wechat_send_dialog`**, look for it in all `[class*=dialog]` elements with `offsetHeight > 0`
-6. Click the send/confirm button inside `.dialog_ft`:
+1. 点击 `#js_submit` 保存草稿
+2. 等 5 秒
+3. 点击"预览"按钮
+4. 等 3 秒
+5. 在 `.wechat_send_dialog .dialog_ft` 中点击"确定"
 
 ```javascript
-var dialogs = document.querySelectorAll('.wechat_send_dialog');
-for (var i = 0; i < dialogs.length; i++) {
-  if (dialogs[i].offsetHeight > 0) {
-    var ft = dialogs[i].querySelector('.dialog_ft');
-    if (ft) ft.querySelector('a, button').click();
-  }
-}
+var ft = document.querySelector('.wechat_send_dialog .dialog_ft');
+ft.querySelector('a, button').click();
 ```
 
-**⚠️ The dialog may appear but NOT be detected by checking `.wechat_send_dialog` class alone** — use a broader `[class*=dialog]` search and look for "发送预览" text content as a backup detection method.
+---
 
-## Gotchas & Lessons Learned
+## 关键脚本
 
-### Font Size & Letter Spacing (Critical!)
-- **`font-size: 15px` and `letter-spacing: 1px` MUST be on `<p>` tag, NOT only on `<span>`** — 公众号 ProseMirror editor strips these properties from `<span>` on paste.
-- `<p>` level inline styles survive paste; `<span>` level font-size/letter-spacing get replaced with `medium`/`normal`.
-- Always put these on BOTH `<p>` and `<span>` for safety (span as fallback).
-- Default typography: **font-size 15px, line-height 2em, letter-spacing 1px**.
+### scripts/upload_and_inject.js
 
-### Text Alignment (Critical!)
-- **`text-align: justify` MUST be on `<p>` (block element), NOT on `<span>` (inline element)** — it's completely ignored on inline elements.
-- **DO NOT add `word-break: break-all`** — it chops English words mid-word, looks terrible.
-- **DO NOT add `overflow-wrap: break-word`** — unnecessary; default behavior already does the right thing.
-- The correct behavior: English words that don't fit wrap whole to the next line, and the previous line's Chinese text stretches to fill both edges. This happens automatically with `text-align: justify` on the `<p>`.
+一站式脚本：上传图片 + 替换 URL + 注入编辑器。
 
-### Image Extraction
-- **✅ USE `fetch()` + `credentials: 'include'`** from the Feishu doc page. This is the reliable method.
-- **❌ DO NOT use `new Image()` + `crossOrigin='use-credentials'` + canvas** — fails with CORS on the `my.feishu.cn` public sharing page.
-- **❌ DO NOT try `feishu_drive_fetch_media`** — requires `docs:document.media:download` app scope which may not be available.
-- The Feishu page at `my.feishu.cn/wiki/xxx` is a **public sharing page** with watermarks but still allows `fetch()` with credentials for image URLs.
-- Image URL pattern: `https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/v2/cover/<TOKEN>/?fallback_source=1&height=2000&mount_node_token=<WIKI_TOKEN>&mount_point=wiki_image&policy=equal`
+```bash
+node <skill-dir>/scripts/upload_and_inject.js \
+  --ws <cdp-websocket-url> \
+  --token <weixin-token> \
+  --html article.html \
+  --images img_1.png img_2.png ... img_16.png
+```
+
+### scripts/fix_typography.py
+
+排版修复：直引号→弯引号，中英文间距。
+
+### scripts/extract_images.js
+
+（保留，但不推荐用于新流程）从浏览器页面提取 base64 图片。
+
+---
+
+## 强制检查清单（每次排版必须逐项验证）
+
+### 生成 HTML 后
+- [ ] H2 font-size 是 20px？（不是 16px、18px、24px）
+- [ ] 正文 p font-size 是 15px、letter-spacing 1px、line-height 2em？
+- [ ] font-size 和 letter-spacing 放在 `<p>` 上了？（不能只放 span）
+- [ ] text-align: justify 放在 `<p>` 上了？
+- [ ] 题图 margin-left/right 是 0？border-radius 是 0？
+- [ ] 内容图片 margin 8px、border-radius 4px？
+- [ ] 用的是 `<div>` 不是 `<section>`？
+- [ ] 引号全是中文弯引号 `""`？
+- [ ] 首段文字与原文一致？（打印前 60 字验证）
+
+### 上传图片后
+- [ ] 16 张（或 N 张）全部返回 cdn_url？
+- [ ] 占位符**倒序**替换（N→1）？
+
+### 注入编辑器后
+- [ ] textContent 长度 > 4000？（不是 2243 这种截断值）
+- [ ] 首段文字与原文一致？
+- [ ] img 数量 = 原文图片数量？
+- [ ] 截图肉眼确认排版正确？
+
+### 保存预览后
+- [ ] 标题已设置？
+- [ ] 封面已选择？
+- [ ] 摘要 ≤15 字且有标点结尾？
+
+> **规则：任何一项不通过，立即停下修复，不要继续下一步。**
+
+---
+
+## 踩坑记录（血泪教训）
+
+### ❌ 不要用 Cmd+V 粘贴
+ProseMirror 粘贴会截断内容、丢失元素。用 innerHTML 注入。
+
+### ❌ 不要用 base64 data URI 作为 img src
+微信编辑器不认 base64 图片，必须上传到微信 CDN 获取 `mmbiz.qpic.cn` URL。
+
+### ❌ 不要用 localhost URL 作为 img src
+编辑器无法访问 localhost，保存后图片会丢失。
+
+### ❌ 占位符替换不要正序
+`IMG_PLACEHOLDER_1` 会把 `IMG_PLACEHOLDER_10` 里的 `1` 也替换掉。**必须倒序替换**（16→1）。
+
+### ❌ 不要假设端口空闲
+旧的 HTTP 服务进程可能占用端口。启动前先 `pkill -f "http.server <port>"` 或换端口。
+
+### ❌ 不要用 `/cgi-bin/uploadimg2cdn` 上传图片
+这个端点返回 `errcode: -1`。正确的端点是 `/cgi-bin/filetransfer?action=upload_material`。
+
+### ✅ 每步都要验证
+- 生成 HTML 后检查首段文字是否正确
+- 上传图片后检查返回的 CDN URL 是否有效
+- 注入后检查 textContent 长度和首段文字
+- 保存后截图确认排版
+
+### ✅ 同一方法失败 2 次就换策略
+不要反复重试同一个不工作的方法。
+
+---
+
+## 完整流程耗时参考
+
+| 步骤 | 预计耗时 |
+|------|---------|
+| 获取文档 + 下载图片 | 1-2 分钟 |
+| 生成 HTML + 修复排版 | 30 秒 |
+| 上传图片到微信 CDN | 1-2 分钟 |
+| 注入编辑器 + 设置元信息 | 30 秒 |
+| 保存 + 预览 | 30 秒 |
+| **总计** | **3-5 分钟** |
+
+---
+
+## Gotchas（保留）
+
+### Font Size & Letter Spacing
+`font-size: 15px` 和 `letter-spacing: 1px` 必须放在 `<p>` 上。公众号编辑器会剥离 `<span>` 上的这些属性。
 
 ### Title Field
-- `#title` is a `<textarea>`, NOT a contentEditable div.
-- Must use `Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set` to set value programmatically.
-- **Set title BEFORE saving** — the `default-203` error often means title is empty.
-- Must dispatch both `input` and `change` events after setting.
-
-### ProseMirror Editor
-- 公众号 uses ProseMirror, editor div is `.ProseMirror`.
-- Must call `browser(action="focus")` on the tab before evaluating JS on it.
-- After pasting, wait sufficient time for all images to upload to WeChat servers.
+`#title` 是 `<textarea>`，必须用 `Object.getOwnPropertyDescriptor` 方式设值。
 
 ### Preview Dialog
-- Multiple dialog elements may exist on the page (most hidden).
-- The "发送预览" dialog may be detected via `[class*=dialog]` with text containing "发送预览".
-- Always filter by `offsetHeight > 0` to find visible dialogs.
-- Preview can be sent even if auto-save shows errors — preview is an independent operation.
-
-### Auto-Save Errors
-- `default-203` typically means a required field is missing (usually title).
-- Auto-save failure does NOT block preview sending.
-- If save keeps failing, check: title set? comment/留言 selected?
-
-### Port Conflicts
-- Local HTTP server port may be occupied from previous sessions.
-- Always check and use a different port if needed (8899, 8900, etc.).
-
-### General
-- Create a working directory per article (e.g. `~/.openclaw/workspace-dev/<article-slug>/`).
-- Keep the generation script (`generate.py`) for reproducibility.
-- The `ws` npm package is needed for CDP communication — install once per working dir.
-- Token from 公众号 URL (`token=476910112`) may change across sessions.
+多个 dialog 可能同时存在，用 `offsetHeight > 0` 过滤可见的。
