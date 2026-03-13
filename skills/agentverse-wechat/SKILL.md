@@ -26,7 +26,7 @@ Read [references/style-guide.md](references/style-guide.md) for complete CSS spe
 | 正文 `<p>` | font-size: 15px, line-height: 2em, letter-spacing: 1px, text-align: justify, margin: 0 8px 24px 8px |
 | 标题 `<h2>` | font-size: 20px, text-align: center, margin: 32px 8px |
 | 题图 | width: 100%, margin: 0, border-radius: 0 |
-| 内容图片 | max-width: 100%, margin: 0 8px, border-radius: 4px |
+| 内容图片 | max-width: 100%, margin: 0 8px, border-radius: 4px, **无 margin-bottom** |
 | 分隔图 | max-width: 100%, margin: 32px 8px |
 | 引用 `""` | 只用中文弯引号，不用 `「」` |
 
@@ -63,8 +63,8 @@ HTML 结构：
 ```html
 <html lang="zh-CN"><head><meta charset="UTF-8"></head>
 <body style="max-width: 680px; margin: 0 auto; padding: 20px; background: #fff;">
-  <!-- 题图：全宽，无边距 -->
-  <div style="text-align: center; margin-bottom: 24px; margin-left: 0; margin-right: 0;">
+  <!-- 题图：全宽，无边距，无段后距 -->
+  <div style="text-align: center; margin-left: 0; margin-right: 0;">
     <img src="IMG_PLACEHOLDER_1" style="width: 100%; border-radius: 0;" />
   </div>
   <!-- 正文段落 -->
@@ -73,8 +73,8 @@ HTML 结构：
   </p>
   <!-- 标题 -->
   <h2 style="text-align: center; margin: 32px 8px;"><span style="font-size: 20px;"><b>标题</b></span></h2>
-  <!-- 内容图片 -->
-  <div style="text-align: center; margin-bottom: 24px; margin-left: 8px; margin-right: 8px;">
+  <!-- 内容图片：无段后距，紧贴下方内容 -->
+  <div style="text-align: center; margin-left: 8px; margin-right: 8px;">
     <img src="IMG_PLACEHOLDER_N" style="max-width: 100%; border-radius: 4px;" />
   </div>
 </body></html>
@@ -223,6 +223,7 @@ node <skill-dir>/scripts/upload_and_inject.js \
 - [ ] 内容图片 margin 8px、border-radius 4px？
 - [ ] 用的是 `<div>` 不是 `<section>`？
 - [ ] 引号全是中文弯引号 `""`？
+- [ ] 图片容器 `<div>` 没有 margin-bottom？（图片不带段后距）
 - [ ] 首段文字与原文一致？（打印前 60 字验证）
 
 ### 上传图片后
