@@ -44,7 +44,9 @@
 
 ## 分隔图片
 - 居中，`text-align: center`
-- `margin-top: 32px; margin-bottom: 32px`
+- **不加额外 margin**（`max-width: 100%` 即可）
+- 分隔图紧贴上方最后一段内容和下方 H2 标题，间距由 H2 的 margin-top 控制
+- ~~旧规则：margin-top: 32px; margin-bottom: 32px~~（已废弃，会导致分隔图前后出现过大空白）
 
 ## 列表
 - 使用悬挂缩进：`text-indent: -0.8em; padding-left: 0.8em`

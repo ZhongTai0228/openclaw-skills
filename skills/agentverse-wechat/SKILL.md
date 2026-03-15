@@ -27,7 +27,7 @@ Read [references/style-guide.md](references/style-guide.md) for complete CSS spe
 | 标题 `<h2>` | font-size: 20px, text-align: center, margin: 32px 8px |
 | 题图 | width: 100%, margin: 0, border-radius: 0 |
 | 内容图片 | max-width: 100%, margin: 0 8px, border-radius: 4px, **无 margin-bottom** |
-| 分隔图 | max-width: 100%, margin: 32px 8px |
+| 分隔图 | max-width: 100%, **无额外 margin** |
 | 引用 `""` | 只用中文弯引号，不用 `「」` |
 
 **⚠️ font-size 和 letter-spacing 必须放在 `<p>` 上，不能只放 `<span>`**——公众号编辑器粘贴时会剥离 span 上的这些属性。
@@ -246,6 +246,33 @@ node <skill-dir>/scripts/upload_and_inject.js \
 ---
 
 ## 踩坑记录（血泪教训）
+
+### ❌ 不要修改原文标点符号
+飞书原文用什么标点就保持什么标点。**不要**自作主张把引号统一转换成中文弯引号或其他格式。生成 HTML 时必须保留原始 Unicode 字符，不要做任何引号替换。
+
+### ❌ 图片容器不要加 margin-bottom
+图片所在的 `<div>` 容器不应有 `margin-bottom`。图片和下方正文之间的间距由正文 `<p>` 的 `margin-bottom: 24px` 自然控制。额外的 margin-bottom 会导致图片后方出现多余空白。
+
+### ❌ 分隔图不要加大 margin
+分隔图（如 01、02 分割线）不应有 `margin: 32px 0`。分隔图本身不需要额外间距，章节标题 `<h2>` 的 `margin-top` 已提供足够的视觉分隔。分隔图用 `max-width: 100%` 即可，不加任何 margin。
+
+### ❌ 不要误点"发表"按钮
+"发表"和"预览"按钮紧挨着。操作时务必精确定位到 `#js_preview`（预览按钮），不要操作到 `#js_send`（发表按钮）。发表后文章无法再编辑，只能重新创建。
+
+### ❌ 图片超过 10MB 会上传失败
+微信 CDN 限制单张图片不超过 10MB。如果题图或其他图片超过此大小，需要先压缩：
+```bash
+sips -Z 2000 --setProperty format jpeg --setProperty formatOptions 85 input.png --out output.jpg
+```
+
+### ✅ 必须设置原创声明
+发表前要勾选原创声明。在编辑器右侧找到"原创"区域，点击"未声明"，勾选协议后确认。
+
+### ✅ 必须设置封面和摘要
+每次保存前确保：封面（从正文选择第一张图）、摘要（≤15字有标点）都已设置。这两项容易遗漏。
+
+### ✅ 预览需要输入微信号
+点击预览后弹出的对话框中需要输入接收预览的微信号/QQ号/手机号，否则预览无法发送。提前向用户确认微信号。
 
 ### ❌ 不要用 Cmd+V 粘贴
 ProseMirror 粘贴会截断内容、丢失元素。用 innerHTML 注入。
